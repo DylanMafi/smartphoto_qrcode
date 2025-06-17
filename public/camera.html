@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Câmera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    video, canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+    }
+    canvas { display: none; }
+  </style>
+</head>
+<body class="bg-black text-white flex flex-col items-center justify-between min-h-screen py-6 px-4">
+
+  <div class="w-full max-w-md flex flex-col items-center">
+    <h2 class="text-xl font-semibold mb-4">Captura de Imagem</h2>
+
+    <div class="w-full rounded-xl overflow-hidden shadow-lg">
+      <video id="video" autoplay class="w-full bg-black"></video>
+      <canvas id="preview" class="w-full bg-black rounded"></canvas>
+    </div>
+
+    <div class="mt-6 flex flex-col sm:flex-row gap-4 w-full justify-center">
+      <button id="tirarFoto"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg w-full sm:w-auto">
+        Tirar Foto
+      </button>
+
+      <button id="refazerFoto"
+        class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-6 rounded-lg w-full sm:w-auto">
+        Refazer
+      </button>
+
+      <button id="salvarFoto"
+        class="hidden bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg w-full sm:w-auto">
+        Salvar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("preview");
+    const tirarBtn = document.getElementById("tirarFoto");
+    const refazerBtn = document.getElementById("refazerFoto");
+    const salvarBtn = document.getElementById("salvarFoto");
+
+    const codProcesso = new URLSearchParams(window.location.search).get("codProcesso");
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert("Erro ao acessar a câmera: " + err));
+
+    tirarBtn.onclick = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+
+      video.style.display = "none";
+      canvas.style.display = "block";
+
+      tirarBtn.classList.add("hidden");
+      refazerBtn.classList.remove("hidden");
+      salvarBtn.classList.remove("hidden");
+    };
+
+    refazerBtn.onclick = () => {
+      video.style.display = "block";
+      canvas.style.display = "none";
+
+      tirarBtn.classList.remove("hidden");
+      refazerBtn.classList.add("hidden");
+      salvarBtn.classList.add("hidden");
+    };
+
+    salvarBtn.onclick = () => {
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("image", blob, "foto.jpg");
+        formData.append("codProcesso", codProcesso);
+
+        fetch("/upload", {
+          method: "POST",
+          body: formData,
+        })
+        .then(res => res.json())
+        .then(data => {
+          alert("Imagem salva com sucesso!");
+          window.location.href = "/index.html";
+        })
+        .catch(err => alert("Erro ao salvar: " + err));
+      }, "image/jpeg");
+    };
+  </script>
+</body>
+</html>
