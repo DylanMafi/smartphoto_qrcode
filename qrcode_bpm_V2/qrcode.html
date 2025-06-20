@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Envio de Foto via QR Code</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex justify-center items-center p-4">
+
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 text-center">
+
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">Envio de Foto via QR Code</h2>
+
+    <p class="text-gray-700 text-sm mb-6">
+      Aponte a câmera do celular para o QR Code abaixo<br>
+      para anexar fotos ou documentos ao processo.
+    </p>
+
+    <!-- BOTÃO GERAR -->
+    <button
+      id="btnGerar"
+      class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 w-full text-sm mb-4"
+    >
+      Gerar QR Code
+    </button>
+
+    <!-- RESULTADO COM QR CODE E BOTÃO -->
+    <div id="resultado" class="mt-4 hidden">
+      <canvas id="qrcode" class="mx-auto mb-4"></canvas>
+
+      <button
+        id="abrirLink"
+        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 w-full text-sm"
+      >
+        Abrir no celular
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const codProcesso = 12345; // valor será dinâmico no seu BPM
+    const url = `${location.origin}/celular.html?codProcesso=${codProcesso}`;
+
+    const btnGerar = document.getElementById("btnGerar");
+    const resultado = document.getElementById("resultado");
+    const abrirLink = document.getElementById("abrirLink");
+
+    btnGerar.onclick = () => {
+      QRCode.toCanvas(document.getElementById("qrcode"), url, error => {
+        if (error) {
+          console.error(error);
+          return alert("Erro ao gerar QR Code");
+        }
+        resultado.classList.remove("hidden");
+      });
+    };
+
+    abrirLink.onclick = () => {
+      window.open(url, "_blank");
+    };
+  </script>
+
+</body>
+</html>

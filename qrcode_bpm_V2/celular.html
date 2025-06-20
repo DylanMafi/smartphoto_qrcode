@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anexar Documentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex justify-center items-center p-4">
+
+  <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 text-center">
+    
+    <!-- LOGO -->
+    <img src="src/SicoobLogo.png" alt="Logo" class="mx-auto mb-4"/>
+
+    <!-- PROCESSO -->
+    <div class="mb-2">
+      <span class="text-gray-500 text-sm">Processo:</span>
+      <span id="processoNumero" class="bg-gray-200 text-gray-800 font-semibold px-2 py-1 rounded text-sm inline-block">123.123</span>
+    </div>
+
+    <!-- TEXTO -->
+    <p class="text-gray-700 text-sm mb-6" id="textoProcesso">
+      As fotos e arquivos serão anexados no processo <strong>123.123</strong> após enviados
+    </p>
+
+    <!-- BOTÃO DE UPLOAD -->
+    <div class="mb-4">
+      <button
+        id="uploadBtn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm w-full"
+      >
+        Tirar foto ou Selecionar Arquivos
+      </button>
+      <input id="fileInput" type="file" multiple class="hidden" accept="image/*,.pdf,.doc,.docx"/>
+    </div>
+
+    <!-- PREVIEW DOS ARQUIVOS -->
+    <div id="previewContainer" class="grid gap-4 mb-4"></div>
+
+    <!-- BOTÃO ENVIAR -->
+    <button
+      id="sendBtn"
+      class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 w-full hidden"
+    >
+      Enviar Anexos
+    </button>
+  </div>
+
+  <!-- MODAL DE VISUALIZAÇÃO -->
+<div id="modalPreview" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+  <div class="bg-white max-w-full max-h-full rounded shadow-lg relative">
+    <!-- Botão X -->
+    <button
+      class="absolute -top-3 -right-3 w-7 h-7 rounded-full bg-red-500 flex items-center justify-center z-50"
+      onclick="fecharModal()"
+    >
+      <img src="./src/xis.png" alt="Fechar" class="w-3 h-3 object-contain" />
+    </button>
+    <div id="modalContent" class="p-4 flex justify-center items-center max-w-[90vw] max-h-[90vh] overflow-auto"></div>
+  </div>
+</div>
+
+
+  <script>
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    function atualizarProcesso() {
+      const codProcesso = getQueryParam("codProcesso") || "123.123";
+      document.getElementById("processoNumero").textContent = codProcesso;
+      document.getElementById("textoProcesso").innerHTML =
+        `As fotos e arquivos serão anexados no processo <strong>${codProcesso}</strong> após enviados`;
+    }
+
+    atualizarProcesso();
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const previewContainer = document.getElementById("previewContainer");
+    const sendBtn = document.getElementById("sendBtn");
+
+    const modal = document.getElementById("modalPreview");
+    const modalContent = document.getElementById("modalContent");
+
+    let anexos = [];
+
+    uploadBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", e => {
+      handleFiles(e.target.files);
+      fileInput.value = "";
+    });
+
+    function handleFiles(files) {
+      [...files].forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          anexos.push({
+            name: file.name,
+            type: file.type,
+            data: ev.target.result
+          });
+          render();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removeFile(index) {
+      anexos.splice(index, 1);
+      render();
+    }
+
+    function abrirModal(anexo) {
+      modalContent.innerHTML = "";
+
+      if (anexo.type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = anexo.data;
+        img.className = "max-w-full max-h-[80vh] rounded";
+        modalContent.appendChild(img);
+      } else {
+        const embed = document.createElement("embed");
+        embed.src = anexo.data;
+        embed.type = anexo.type;
+        embed.className = "w-[80vw] h-[80vh]";
+        modalContent.appendChild(embed);
+      }
+
+      modal.classList.remove("hidden");
+    }
+
+    function fecharModal() {
+      modal.classList.add("hidden");
+      modalContent.innerHTML = "";
+    }
+
+    function render() {
+      previewContainer.innerHTML = "";
+      sendBtn.classList.toggle("hidden", anexos.length === 0);
+
+      anexos.forEach((anexo, i) => {
+        const box = document.createElement("div");
+        box.className = "relative flex items-center gap-3 p-3 rounded-md border bg-gray-50 shadow-sm";
+
+        const btn = document.createElement("button");
+        btn.className = "absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center";
+        btn.onclick = () => removeFile(i);
+
+        const img = document.createElement("img");
+        img.src = "./src/xis.png";
+        img.alt = "Remover";
+        img.className = "w-3 h-3 object-contain";
+        btn.appendChild(img);
+
+        let preview;
+        if (anexo.type.startsWith("image/")) {
+          preview = document.createElement("img");
+          preview.src = anexo.data;
+          preview.className = "w-14 h-14 object-cover rounded cursor-pointer";
+        } else {
+          preview = document.createElement("div");
+          preview.className = "w-14 h-14 flex items-center justify-center bg-white border rounded text-xl cursor-pointer";
+          preview.textContent = "📄";
+        }
+        preview.onclick = () => abrirModal(anexo);
+
+        const name = document.createElement("p");
+        name.textContent = anexo.name;
+        name.className = "text-sm truncate max-w-[200px]";
+
+        box.appendChild(preview);
+        box.appendChild(name);
+        box.appendChild(btn);
+        previewContainer.appendChild(box);
+      });
+    }
+
+    sendBtn.addEventListener("click", () => {
+      console.log("Enviando anexos para o processo:", getQueryParam("codProcesso"), anexos);
+      alert("Arquivos enviados com sucesso! (simulado)");
+      anexos = [];
+      render();
+    });
+  </script>
+</body>
+</html>
