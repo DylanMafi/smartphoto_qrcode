@@ -41,27 +41,38 @@
   </div>
 
   <script>
-    const codProcesso = 12345; // valor será dinâmico no seu BPM
-    const url = `${location.origin}/celular.html?codProcesso=${codProcesso}`;
+  // Simulando o objeto ProcessData fornecido pelo BPM
+  const ProcessData = {
+    processInstanceId: 12345,
+    activityInstanceId: 1,
+    cycle: 1
+  };
 
-    const btnGerar = document.getElementById("btnGerar");
-    const resultado = document.getElementById("resultado");
-    const abrirLink = document.getElementById("abrirLink");
+  const codProcesso = ProcessData.processInstanceId;
+  const codEtapa = ProcessData.activityInstanceId;
+  const codCiclo = ProcessData.cycle;
 
-    btnGerar.onclick = () => {
-      QRCode.toCanvas(document.getElementById("qrcode"), url, error => {
-        if (error) {
-          console.error(error);
-          return alert("Erro ao gerar QR Code");
-        }
-        resultado.classList.remove("hidden");
-      });
-    };
+  // Monta a URL com os 3 parâmetros
+  const url = `${location.origin}/bpm/upload/cadastros/apps/qrcode_imagem/public/celular.html?codProcesso=${codProcesso}&codEtapa=${codEtapa}&codCiclo=${codCiclo}`;
 
-    abrirLink.onclick = () => {
-      window.open(url, "_blank");
-    };
-  </script>
+  const btnGerar = document.getElementById("btnGerar");
+  const resultado = document.getElementById("resultado");
+  const abrirLink = document.getElementById("abrirLink");
+
+  btnGerar.onclick = () => {
+    QRCode.toCanvas(document.getElementById("qrcode"), url, error => {
+      if (error) {
+        console.error(error);
+        return alert("Erro ao gerar QR Code");
+      }
+      resultado.classList.remove("hidden");
+    });
+  };
+
+  abrirLink.onclick = () => {
+    window.open(url, "_blank");
+  };
+</script>
 
 </body>
 </html>

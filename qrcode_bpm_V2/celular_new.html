@@ -39,6 +39,19 @@
     </div>
   </div>
 
+  <!-- LOADER -->
+  <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="flex flex-col items-center gap-3">
+      <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
+        </path>
+      </svg>
+      <span id="progressText" class="text-white font-semibold text-sm">Enviando 0 de 0 arquivos...</span>
+    </div>
+  </div>
+
   <script>
     function getQueryParam(param) {
       return new URLSearchParams(window.location.search).get(param);
@@ -64,6 +77,8 @@
     const sendBtn = document.getElementById("sendBtn");
     const modal = document.getElementById("modalPreview");
     const modalContent = document.getElementById("modalContent");
+    const loader = document.getElementById("loader");
+    const progressText = document.getElementById("progressText");
 
     let anexos = [];
 
@@ -76,7 +91,7 @@
           anexos.push({
             name: file.name,
             type: file.type,
-            data: ev.target.result // base64 string
+            data: ev.target.result
           });
           render();
         };
@@ -161,46 +176,46 @@
         return;
       }
 
+      loader.classList.remove("hidden");
+      const total = anexos.length;
+      let enviados = 0;
+      progressText.textContent = `Enviando 0 de ${total} arquivos...`;
+
       for (const anexo of anexos) {
-        // Transformar base64 em Blob
-        const base64Data = anexo.data.split(",")[1];
-        const mimeType = anexo.type;
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: mimeType });
-
-        // Criar arquivo File
-        const file = new File([blob], anexo.name, { type: mimeType });
-
-        // Criar FormData e anexar arquivo
-        const form = new FormData();
-        form.append("action", "IMPORT");
-        form.append("templateId", "1");
-        form.append("file", file);
-
-        const urlImport = `https://api.lecom.com.br/service/bpm/api/v1/process-instances/${codProcesso}/activity-instances/${codEtapa}/cycles/${codCiclo}/grids/${fieldId}/fields/${fieldId}/documents`;
-
-        const optionsImport = {
-          method: "POST",
-          headers: {
-            accept: "application/json;charset=UTF-8",
-            "X-Server": "app-hom.credicom.lecom.com.br",
-            "test-mode": "true",
-            apikey: "0BtLgtsfOzkannNecP7pG2Lig0TQGy5Y"
-          },
-          body: form
-        };
-
         try {
+          const base64Data = anexo.data.split(",")[1];
+          const mimeType = anexo.type;
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: mimeType });
+          const file = new File([blob], anexo.name, { type: mimeType });
+
+          const form = new FormData();
+          form.append("action", "IMPORT");
+          form.append("templateId", "1");
+          form.append("file", file);
+
+          const urlImport = `https://api.lecom.com.br/service/bpm/api/v1/process-instances/${codProcesso}/activity-instances/${codEtapa}/cycles/${codCiclo}/grids/${fieldId}/fields/${fieldId}/documents`;
+
+          const optionsImport = {
+            method: "POST",
+            headers: {
+              accept: "application/json;charset=UTF-8",
+              "X-Server": "app-hom.credicom.lecom.com.br",
+              "test-mode": "true",
+              apikey: "0BtLgtsfOzkannNecP7pG2Lig0TQGy5Y"
+            },
+            body: form
+          };
+
           const resImport = await fetch(urlImport, optionsImport);
           const jsonImport = await resImport.json();
           console.log(`✅ ${anexo.name} enviado com sucesso:`, jsonImport);
 
-          // Se retornar os dados fileName e fileUniqueId, executar segundo POST
           if (jsonImport.fileName && jsonImport.fileUniqueId) {
             const valorGrid = `${jsonImport.fileName}:${jsonImport.fileUniqueId}`;
             const bodyUpdate = {
@@ -243,8 +258,12 @@
         } catch (err) {
           console.error(`❌ Erro ao enviar ${anexo.name}:`, err);
         }
+
+        enviados++;
+        progressText.textContent = `Enviando ${enviados} de ${total} arquivos...`;
       }
 
+      loader.classList.add("hidden");
       alert("Todos os arquivos foram enviados.");
       anexos = [];
       render();
